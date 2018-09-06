@@ -1,0 +1,1 @@
+<h1>Safe Page</h1>
