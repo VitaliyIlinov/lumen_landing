@@ -25,7 +25,7 @@ class Fraud
 
         $this->request = $request;
 
-        if (env('FRAUD_URL') || env('FRAUD_KEY')) {
+        if (!env('FRAUD_URL') || !env('FRAUD_KEY')) {
             throw new \Exception('FRAUD_URL and FRAUD_KEY must be set');
         }
 
@@ -80,6 +80,31 @@ class Fraud
     {
         return $this->allHeaders;
     }
+
+
+
+    public function sendFraudRequest() {
+        $client = new \GuzzleHttp\Client();
+        $result = $client->request('POST', env('FRAUD_URL'), [
+            'headers' => $this->allHeaders
+        ]);
+
+        $requestString =  $result->getBody();
+
+        if ($requestString=='Bad request (1)') {
+            throw new \Exception('Bad campaign id. Check FraudFilter url');
+        }
+
+        $requesArray = explode(';', $requestString);
+
+        return $requesArray[0];
+
+    }
+
+
+
+
+
 
 
 //    private function getallheadersFF($allHeaders) {

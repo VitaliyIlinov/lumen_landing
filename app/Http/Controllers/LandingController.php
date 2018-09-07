@@ -9,34 +9,19 @@ use Illuminate\Support\Facades\Log;
 class LandingController extends Controller
 {
 
-
-
     public function safe(Request $request) {
 
-      $header =  $request->headers->all();
-
-      //return $header;
-
-      $fraud = new Fraud($request);
-
-        //var_dump( $fraud->getHeaders());
-
-
-      return $fraud->getHeaders();
-
-
-
-        if (!env('FRAUDFILTER')) {
+        if ($request->has('pageType')) {
             return $this->getMoneyPage();
         }
+
         if (view()->exists('safe/index')) {
             return view('safe/index');
         }
     }
 
 
-
-    public function money(Request $request) {
+    public function money() {
       return $this->getMoneyPage();
     }
 

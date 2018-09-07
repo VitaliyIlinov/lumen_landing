@@ -2,9 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Fraud;
 use Closure;
+use Illuminate\Http\Request;
 
-class ExampleMiddleware
+class FraudMiddleware
 {
     /**
      * Handle an incoming request.
@@ -13,8 +15,14 @@ class ExampleMiddleware
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
+
+        if (env('FRAUDFILTER')) {
+            $fraud = new Fraud($request);
+            $request->request->add(['pageType',$fraud->sendFraudRequest()]);
+        }
+
         return $next($request);
     }
 }
