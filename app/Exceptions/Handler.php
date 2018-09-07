@@ -49,6 +49,9 @@ class Handler extends ExceptionHandler
             return $e->getResponse();
         }
 
+
+
+
         return response()->json(
             [
                 'name' => (new \ReflectionClass($e))->getShortName(),

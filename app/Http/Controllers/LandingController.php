@@ -2,31 +2,34 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Fraud;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class LandingController extends Controller
 {
 
-    public function __construct()
-    {
-
-    }
-
-
     public function safe(Request $request) {
-        if (!env('FRAUDFILTER')) {
+
+        if ($request->has('pageType')) {
             return $this->getMoneyPage();
         }
+
         if (view()->exists('safe/index')) {
             return view('safe/index');
         }
     }
 
-    public function money(Request $request) {
 
+    public function money() {
       return $this->getMoneyPage();
+    }
 
+
+    public function moneySecondPage() {
+        if (view()->exists('money/secod')) {
+            return view('money/second');
+        }
     }
 
 
