@@ -1,19 +1,12 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: bender
- * Date: 06.09.18
- * Time: 14:09
- */
 
 namespace App\Services;
 
+use GuzzleHttp\Exception\ClientException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class Fraud
 {
-
 
     public $allHeaders = [];
     private $request;
@@ -29,8 +22,10 @@ class Fraud
             throw new \Exception('FRAUD_URL and FRAUD_KEY must be set');
         }
 
+        $this->allHeaders['content-length'] = 0;
         $this->allHeaders['X-FF-P'] = env('FRAUD_KEY');
 
+        $this->addHeader($headers, 'X-FF-REMOTE-ADDR5', 'HTTP_TEST');
         $this->addHeader($headers, 'X-FF-REMOTE-ADDR', 'REMOTE_ADDR');
         $this->addHeader($headers, 'X-FF-X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR');
         $this->addHeader($headers, 'X-FF-X-REAL-IP', 'HTTP_X_REAL_IP');
@@ -70,6 +65,12 @@ class Fraud
 
     public function addHeader($header, $out, $in)
     {
+        if (0 === strpos($in, 'HTTP_')) {
+            $in = str_replace('_', '-', strtolower(substr($in, 5)));
+        }
+        if ($in === 'host') {
+            $out = 'X-FF-HOST-ORDER';
+        }
         if ($this->request->header($in)) {
             $this->allHeaders[$out] = $this->request->header($in);
         }
@@ -82,42 +83,20 @@ class Fraud
     }
 
 
-
-    public function sendFraudRequest() {
+    public function sendFraudRequest()
+    {
         $client = new \GuzzleHttp\Client();
-        $result = $client->request('POST', env('FRAUD_URL'), [
-            'headers' => $this->allHeaders
-        ]);
 
-        $requestString =  $result->getBody();
-
-        if ($requestString=='Bad request (1)') {
-            throw new \Exception('Bad campaign id. Check FraudFilter url');
+        try {
+            $result = $client->request('POST', env('FRAUD_URL'), ['headers' => $this->allHeaders]);
+        } catch (ClientException $e) {
+            throw new ClientException($e->getResponse()->getReasonPhrase(), $e->getRequest(), $e->getResponse());
         }
 
-        $requesArray = explode(';', $requestString);
+        $requestString = $result->getBody()->getContents();
 
-        return $requesArray[0];
+        return explode(';', $requestString)[0];
 
     }
-
-
-
-
-
-
-
-//    private function getallheadersFF($allHeaders) {
-//
-//        $headers = [];
-//        foreach ( $allHeaders as $name => $value ) {
-//            $headers[strtolower($name).'111'] =  $value;
-//        }
-//        return $headers;
-//
-//
-//
-//    }
-
 
 }

@@ -16,6 +16,16 @@ $router->get('/', function () use ($router) {
 });
 
 
-$router->get('/safe', 'LandingController@safe');
-$router->get('/money', 'LandingController@money');
+
+$router->group(['prefix' => 'safe'], function () use ($router) {
+    $router->get('/', 'LandingController@safe');
+});
+$router->group(['prefix' => 'money'], function () use ($router) {
+    $router->get('/', 'LandingController@money');
+});
+
+$router->post('/phone_check', 'LandingController@responsePhoneChecker');
+$router->post('/track_params', 'LandingController@getTrackParams');
+$router->post('/send', 'LandingController@send');
+$router->get('/test', 'LandingController@test');
 

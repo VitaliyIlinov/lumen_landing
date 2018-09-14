@@ -1,1 +1,0 @@
-<h1>Money Page</h1>

@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
-class AppServiceProvider extends ServiceProvider
+class BladeServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
@@ -19,9 +19,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        View::share('test','test');
-        View::composer(['safe.index',],function ($view){
-           //todo if need manipulate data before render view
+        Blade::if('env', function ($envKey, $value) {
+            return env($envKey) == $value;
         });
     }
 }
