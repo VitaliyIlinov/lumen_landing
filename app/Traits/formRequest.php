@@ -3,6 +3,8 @@
 namespace App\Traits;
 
 
+use App\Exceptions\LogException;
+
 trait formRequest
 {
 
@@ -34,7 +36,7 @@ trait formRequest
     public function getTransactionIdFormRequest()
     {
         if(!session()->has(['offer_id', 'affiliate_id'])){
-            throw new \Exception("There are no offers and affiliates",303);
+            throw new LogException("There are no offers and affiliates",303);
         }
         $params = http_build_query([
             'offer_id'=>session()->get('offer_id'),

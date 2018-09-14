@@ -64,12 +64,12 @@ $app->configure('session');
 $app->middleware([
     \Illuminate\Session\Middleware\StartSession::class,
     \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-    App\Http\Middleware\FraudMiddleware::class
+    App\Http\Middleware\FraudMiddleware::class,
 ]);
 
-// $app->routeMiddleware([
-//     'auth' => App\Http\Middleware\Authenticate::class,
-// ]);
+ $app->routeMiddleware([
+     'prepare' => App\Http\Middleware\PrepareMiddleware::class
+ ]);
 
 /*
 |--------------------------------------------------------------------------

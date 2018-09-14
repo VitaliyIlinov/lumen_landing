@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\LogException;
 use App\Traits\formRequest;
 use GeoIp2\Model\City;
 use Illuminate\Http\Request;
@@ -37,28 +38,23 @@ class LandingController extends Controller
 
     public function __construct()
     {
-        $this->location = $this->getLocation('176.115.100.111');
-        $this->setCountryIso($this->location);
+        $this->location = $this->getLocation();
         $this->setSessionData(env('GET_TRACK_PARAMS') == 'clicks'
             ? $this->getBinomFormRequest()
             : request()->all());
-
+        $this->setTransactionId();
+        $this->setCountryIso($this->location);
     }
 
-    public function safe(Request $request)
+    public function page(Request $request)
     {
         if (env('FRAUDFILTER') && $request->get('pageType')) {
             return $this->getMoneyPage();
         }
-        return $this->getSavePage();
+        return $this->getSafePage();
     }
 
-    public function money()
-    {
-        return $this->getMoneyPage();
-    }
-
-    private function getMoneyPage()
+    public function getMoneyPage()
     {
         if (view()->exists('money.index')) {
             return view('money.index', [
@@ -66,10 +62,10 @@ class LandingController extends Controller
                 'request' => request()->all()
             ]);
         }
-        return view('errors.404');
+        throw new LogException('Not found view money.index',303);
     }
 
-    private function getSavePage()
+    public function getSafePage()
     {
         if (view()->exists('safe.index')) {
             return view('safe.index', [
@@ -77,7 +73,7 @@ class LandingController extends Controller
                 'request' => request()->all()
             ]);
         }
-        return view('errors.404');
+        throw new LogException('not found view safe.index',303);
     }
 
 
@@ -95,15 +91,13 @@ class LandingController extends Controller
             $this->setSessionData($this->getBinomFormRequest());
         }
 
-        if (!$this->getSessionData(['transaction_id'])) {
-            $this->setSessionData(['transaction_id' => $this->getTransactionIdFormRequest()]);
-        };
+        $this->setTransactionId();
 
         $request->merge($this->getTrackParams());
         return $this->sendDataForm($request->except('pageType'));
     }
 
-    public function test(Request $request)
+    public function test()
     {
         print_r($this->getTrackParams());
     }
@@ -146,5 +140,12 @@ class LandingController extends Controller
     protected function setCountryIso(City $geoIP)
     {
         $this->setSessionData(['countryISO' => strtolower($geoIP->country->isoCode)]);
+    }
+
+    protected function setTransactionId()
+    {
+        if (!$this->getSessionData(['transaction_id'])) {
+            $this->setSessionData(['transaction_id' => $this->getTransactionIdFormRequest()]);
+        };
     }
 }

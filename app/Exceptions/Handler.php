@@ -33,6 +33,9 @@ class Handler extends ExceptionHandler
      */
     public function report(Exception $e)
     {
+        if ($e instanceof LogException)  {
+            $e->report();
+        }
         parent::report($e);
     }
 
@@ -45,12 +48,15 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $e)
     {
+//        if (env('APP_DEBUG')) {
+//            return parent::render($request, $e);
+//        }
+
         if ($e instanceof ValidationException && $e->getResponse()) {
             return $e->getResponse();
+        }elseif ($e instanceof LogException)  {
+            return $e->render($request);
         }
-
-
-       // return parent::render($request, $e);
 
         return response()->json(
             [
@@ -62,7 +68,5 @@ class Handler extends ExceptionHandler
         );
 
     }
-
-
 
 }

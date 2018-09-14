@@ -11,21 +11,31 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
+//$router->get('/', function () use ($router) {
+//    return $router->app->version();
+//});
+//
+
+$router->group(['middleware' => 'prepare'], function () use ($router) {
+
+    $router->group(['prefix' => 'safe','middleware' => 'prepare'], function () use ($router) {
+        $router->get('/', 'LandingController@getSavePage');
+    });
+
+    $router->group(['prefix' => 'money','middleware' => 'prepare'], function () use ($router) {
+        $router->get('/', 'LandingController@getMoneyPage');
+    });
+
+    $router->get('/test', 'LandingController@test');
 });
 
 
-
-$router->group(['prefix' => 'safe'], function () use ($router) {
-    $router->get('/', 'LandingController@safe');
-});
-$router->group(['prefix' => 'money'], function () use ($router) {
-    $router->get('/', 'LandingController@money');
-});
-
-$router->post('/phone_check', 'LandingController@responsePhoneChecker');
+$router->get('/', 'LandingController@page');
+$router->get('/phone_check', 'LandingController@responsePhoneChecker');
 $router->post('/track_params', 'LandingController@getTrackParams');
 $router->post('/send', 'LandingController@send');
-$router->get('/test', 'LandingController@test');
+
+$router->get('/404', function () {
+    return view('errors.404');
+});
 
