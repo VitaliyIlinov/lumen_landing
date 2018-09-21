@@ -8,8 +8,9 @@ use Illuminate\Http\Request;
 class Fraud
 {
 
-    public $allHeaders = [];
+    private $allHeaders = [];
     private $request;
+    private $response = null;
 
 
     public function __construct(Request $request)
@@ -85,18 +86,28 @@ class Fraud
 
     public function sendFraudRequest()
     {
-        $client = new \GuzzleHttp\Client();
+        if (is_null($this->response)) {
 
-        try {
-            $result = $client->request('POST', env('FRAUD_URL'), ['headers' => $this->allHeaders]);
-        } catch (ClientException $e) {
-            throw new ClientException($e->getResponse()->getReasonPhrase(), $e->getRequest(), $e->getResponse());
+            $client = new \GuzzleHttp\Client();
+
+            try {
+                $this->response = $client->request('POST', env('FRAUD_URL'), ['headers' => $this->allHeaders]);
+            } catch (ClientException $e) {
+                throw new ClientException($e->getResponse()->getReasonPhrase(), $e->getRequest(), $e->getResponse());
+            }
         }
+        return $this->response ;
+    }
 
-        $requestString = $result->getBody()->getContents();
+    public function isCloaked()
+    {
+        $response = $this->sendFraudRequest();
+        return explode(';', $response->getBody()->getContents())[0];
+    }
 
-        return explode(';', $requestString)[0];
-
+    public function getStatus()
+    {
+        return $this->sendFraudRequest()->getStatusCode();
     }
 
 }

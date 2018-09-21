@@ -3,23 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\LogException;
-use App\Traits\formRequest;
+use App\Traits\FormRequest;
 use GeoIp2\Model\City;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class LandingController extends Controller
 {
-    use formRequest;
+    use FormRequest;
 
     protected $location;
 
     protected $rules = [
-        'first_name' => 'required|string|sometimes',
-        'last_name' => 'required|string|sometimes',
-        'email_address' => 'required|email|sometimes',
-        'phone' => 'required|string|sometimes',
-        'countryISO' => 'required|string|size:2|sometimes',
+        'firstName' => 'required|string',
+        'lastName' => 'required|string',
+        'email' => 'required|email',
+        'phone' => 'required|string',
+        'country' => 'required|string|size:2',
+        'ip' => 'required|sometimes',
         'aff_id' => 'required|string|sometimes',
         'affiliate_id' => 'required|string|sometimes',
         'aff_sub' => 'required|string|sometimes',
@@ -32,23 +33,31 @@ class LandingController extends Controller
         'source_id' => 'required|string|sometimes',
         'registration' => 'required|sometimes',
         'redirectTarget' => 'required|in:deposit,platform,webpage|sometimes',
+        'comment' => 'required|string|sometimes',
+        'accessKey' => 'required|string|sometimes',
+        'password' => 'required|string|sometimes',
+        'referrer' => 'required|string|sometimes',
+        'sourceId' => 'required|string|sometimes',
+        'externalId' => 'required|string|sometimes',
+        'custom' => 'required|string|sometimes',
     ];
 
     protected $rulesMessage = [];
 
     public function __construct()
     {
-        $this->location = $this->getLocation();
+        $this->location = $this->getLocation('176.115.100.111');
         $this->setSessionData(env('GET_TRACK_PARAMS') == 'clicks'
             ? $this->getBinomFormRequest()
             : request()->all());
         $this->setTransactionId();
-        $this->setCountryIso($this->location);
+        $this->setCountry($this->location);
+        $this->setIp($this->location);
     }
 
     public function page(Request $request)
     {
-        if (env('FRAUDFILTER') && $request->get('pageType')) {
+        if (session()->get('pageType')) {
             return $this->getMoneyPage();
         }
         return $this->getSafePage();
@@ -62,7 +71,7 @@ class LandingController extends Controller
                 'request' => request()->all()
             ]);
         }
-        throw new LogException('Not found view money.index',303);
+        throw new LogException('Not found view money.index', 303);
     }
 
     public function getSafePage()
@@ -73,7 +82,7 @@ class LandingController extends Controller
                 'request' => request()->all()
             ]);
         }
-        throw new LogException('not found view safe.index',303);
+        throw new LogException('not found view safe.index', 303);
     }
 
 
@@ -92,9 +101,11 @@ class LandingController extends Controller
         }
 
         $this->setTransactionId();
+        $this->setSessionData(['accessKey' => env('ACCESS_KEY')]);
 
         $request->merge($this->getTrackParams());
-        return $this->sendDataForm($request->except('pageType'));
+        $response = $this->sendDataForm($request->all());
+        return $response->getBody()->getContents();
     }
 
     public function test()
@@ -112,11 +123,6 @@ class LandingController extends Controller
         return $this->getSessionData(array_keys($this->rules));
     }
 
-    protected function getIpAddress()
-    {
-        return isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
-    }
-
     protected function getSessionData(array $data = array())
     {
         $result = array_filter(request()->session()->all(), function ($v, $k) use ($data) {
@@ -128,7 +134,7 @@ class LandingController extends Controller
 
     protected function setSessionData(array $data = array())
     {
-        session()->put($data ?: request()->except('pageType'));
+        session()->put($data ?: request()->all());
     }
 
 
@@ -137,9 +143,9 @@ class LandingController extends Controller
         return app('geoip')->getLocation($ip);
     }
 
-    protected function setCountryIso(City $geoIP)
+    protected function setCountry(City $geoIP)
     {
-        $this->setSessionData(['countryISO' => strtolower($geoIP->country->isoCode)]);
+        $this->setSessionData(['country' => strtolower($geoIP->country->isoCode)]);
     }
 
     protected function setTransactionId()
@@ -148,4 +154,10 @@ class LandingController extends Controller
             $this->setSessionData(['transaction_id' => $this->getTransactionIdFormRequest()]);
         };
     }
+
+    protected function setIp(City $geoIP)
+    {
+        $this->setSessionData(['ip' => $geoIP->traits->ipAddress]);
+    }
+
 }

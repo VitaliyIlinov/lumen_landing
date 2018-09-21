@@ -14,26 +14,31 @@
 //$router->get('/', function () use ($router) {
 //    return $router->app->version();
 //});
-//
 
-$router->group(['middleware' => 'prepare'], function () use ($router) {
-
-    $router->group(['prefix' => 'safe','middleware' => 'prepare'], function () use ($router) {
-        $router->get('/', 'LandingController@getSavePage');
-    });
-
-    $router->group(['prefix' => 'money','middleware' => 'prepare'], function () use ($router) {
-        $router->get('/', 'LandingController@getMoneyPage');
-    });
-
-    $router->get('/test', 'LandingController@test');
-});
-
-
-$router->get('/', 'LandingController@page');
+$router->get('/',['middleware' => 'Fraud', 'uses'=>'LandingController@page']);
 $router->get('/phone_check', 'LandingController@responsePhoneChecker');
 $router->post('/track_params', 'LandingController@getTrackParams');
 $router->post('/send', 'LandingController@send');
+
+/**
+ * Diagnostic endpoints
+ */
+$router->group(['middleware' => 'KeyDefense'], function () use ($router) {
+    $router->group(['prefix' => 'safe'], function () use ($router) {
+        $router->get('/', [ 'as' => 'safe','uses'=> 'LandingController@getSafePage']);
+    });
+
+    $router->group(['prefix' => 'money'], function () use ($router) {
+        $router->get('/', [ 'as' => 'money','uses'=>'LandingController@getMoneyPage']);
+    });
+
+    $router->get('/test', 'LandingController@test');
+
+    $router->get('/getState', 'ApiController@getState');
+    $router->get('/getHeartbeat', 'ApiController@getHeartbeat');
+    $router->get('/getLogs', 'ApiController@getLogs');
+});
+
 
 $router->get('/404', function () {
     return view('errors.404');

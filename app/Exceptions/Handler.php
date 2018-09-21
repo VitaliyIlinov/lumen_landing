@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Exception;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -18,7 +19,7 @@ class Handler extends ExceptionHandler
      */
     protected $dontReport = [
         AuthorizationException::class,
-        HttpException::class,
+       // HttpException::class,
         ModelNotFoundException::class,
         ValidationException::class,
     ];
@@ -28,22 +29,19 @@ class Handler extends ExceptionHandler
      *
      * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
      *
-     * @param  \Exception  $e
+     * @param  \Exception $e
      * @return void
      */
     public function report(Exception $e)
     {
-        if ($e instanceof LogException)  {
-            $e->report();
-        }
         parent::report($e);
     }
 
     /**
      * Render an exception into an HTTP response.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Exception  $e
+     * @param  \Illuminate\Http\Request $request
+     * @param  \Exception $e
      * @return \Illuminate\Http\Response
      */
     public function render($request, Exception $e)
@@ -51,22 +49,12 @@ class Handler extends ExceptionHandler
 //        if (env('APP_DEBUG')) {
 //            return parent::render($request, $e);
 //        }
-
-        if ($e instanceof ValidationException && $e->getResponse()) {
-            return $e->getResponse();
-        }elseif ($e instanceof LogException)  {
-            return $e->render($request);
+        if ($e instanceof LogException && !$request->expectsJson()) {
+           // return $e->render($request);
         }
-
-        return response()->json(
-            [
-                'name' => (new \ReflectionClass($e))->getShortName(),
-                'message' => $e->getMessage(),
-                'code' => $e->getCode()
-            ],
-            method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500
-        );
-
+        return $request->expectsJson()
+            ? response()->json(['message' => $e->getMessage(), 'name' => (new \ReflectionClass($e))->getShortName()], $e->getCode())
+            : parent::render($request, $e);
     }
 
 }

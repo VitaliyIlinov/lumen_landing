@@ -64,11 +64,11 @@ $app->configure('session');
 $app->middleware([
     \Illuminate\Session\Middleware\StartSession::class,
     \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-    App\Http\Middleware\FraudMiddleware::class,
 ]);
 
  $app->routeMiddleware([
-     'prepare' => App\Http\Middleware\PrepareMiddleware::class
+     'KeyDefense' => App\Http\Middleware\KeyDefenseMiddleware::class,
+     'Fraud' =>App\Http\Middleware\FraudMiddleware::class,
  ]);
 
 /*

@@ -38,6 +38,13 @@ return [
             'channels' => ['single'],
         ],
 
+        'custom' => [
+            'driver' => 'single',
+            'tap' => [App\Logging\SetFormatter::class],
+            'path' => storage_path('logs/laravel.log'),
+            'level' => 'debug',
+        ],
+
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),

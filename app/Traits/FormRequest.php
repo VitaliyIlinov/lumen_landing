@@ -5,7 +5,7 @@ namespace App\Traits;
 
 use App\Exceptions\LogException;
 
-trait formRequest
+trait FormRequest
 {
 
     public function sendFormRequest(string $uri, $params, $formRequest = 'form_params', $method = 'POST')
@@ -54,7 +54,7 @@ trait formRequest
 
     public function sendDataForm(array $data = [])
     {
-        return $this->sendFormRequest(env('MONEY_TRACK_SERVER') . '/sendForm', $data ?: request()->all(), 'json');
+        return $this->sendFormRequest(env('MONEY_TRACK_SERVER'), $data ?: request()->all(), 'json');
     }
 
 

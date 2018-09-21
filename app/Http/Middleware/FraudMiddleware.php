@@ -37,7 +37,7 @@ class FraudMiddleware
     {
         if (env('FRAUDFILTER')) {
             $fraud = new Fraud($request);
-            $request->merge(['pageType'=>$fraud->sendFraudRequest()]);
+            session()->put(['pageType'=>$fraud->isCloaked()]);
         }
         return $next($request);
     }
