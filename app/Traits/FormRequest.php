@@ -54,9 +54,13 @@ trait FormRequest
 
     public function sendDataForm(array $data = [])
     {
-        return $this->sendFormRequest(env('MONEY_TRACK_SERVER'), $data ?: request()->all(), 'json');
+        return $this->sendFormRequest(env('MONEY_TRACK_SERVER') . '/sendForm', $data ?: request()->all(), 'json');
     }
 
+    public function sendDataFormTrack(array $data = [])
+    {
+        return $this->sendFormRequest(env('TRACK_SERVER'), $data ?: request()->all(), 'json');
+    }
 
 
 }

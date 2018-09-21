@@ -8,16 +8,30 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 
 class ApiController extends Controller
 {
+    /**
+     * @var string
+     */
+    private $responseFormat;
 
-    //todo text or json
-    private $responseFormat = 'text';
-    private $pathConfigJs = 'public/js/config.js';
+    private $pathConfigJs = 'public/safe/js/config.js';
     private $configKeyRequired = [
-        'LOG_CHANNEL', 'FRAUDFILTER', 'FRAUD_URL', 'FRAUD_KEY', 'GET_TRACK_PARAMS', 'MONEY_TRACK_SERVER',
-        'HASOFFERS_SERVER', 'BINOM_SERVER', 'BINOM_KEY', 'SOURCE_ID', 'ACCESS_KEY', 'LOG_PERIOD', 'LAST_LOG_ERRORS'
+        'LOG_CHANNEL',
+        'FRAUDFILTER',
+        'FRAUD_URL',
+        'FRAUD_KEY',
+        'GET_TRACK_PARAMS',
+        'MONEY_TRACK_SERVER',
+        'HASOFFERS_SERVER',
+        'BINOM_SERVER',
+        'BINOM_KEY',
+        'SOURCE_ID',
+        'ACCESS_KEY',
+        'LOG_PERIOD',
+        'LAST_LOG_ERRORS'
     ];
 
     private $responseMsg = [
@@ -30,7 +44,7 @@ class ApiController extends Controller
     ];
     private $errors = [];
 
-    public function __construct(Request $request)
+    public function __construct()
     {
         app()->configure('logging');
         $this->pathConfigJs = base_path($this->pathConfigJs);
@@ -53,25 +67,27 @@ class ApiController extends Controller
 
     public function getLogs(Request $request)
     {
-        $data = array_slice($this->getLogsArr(), -1 * abs(env('LAST_LOG_ERRORS')));
-        return $this->jsonToArray($data);
+        $lastLogErrors = $request->get('last_log', env('LAST_LOG_ERRORS'));
+        $data = array_slice($this->getLogsArr(), -1 * abs($lastLogErrors));
+        return $this->textResponse($this->jsonToArray($data));
     }
 
 
-    private function setResponseFormat(): void
+    private function setResponseFormat(array $availableFormat = ['text', 'json'])
     {
-        $availableResponse = ['text', 'json'];
         $request = request();
-        if (in_array($format = $request->get('format'), $availableResponse)) {
+        if (in_array($format = $request->get('format'), $availableFormat)) {
             $this->responseFormat = $format;
+        }else{
+            $this->responseFormat = 'text';
         }
     }
 
     private function setAllParams(Request $request)
     {
         $this->setConfig();
-        $this->setPages();
         $this->setCloaking();
+        $this->setPages();
         $logs = $this->jsonToArray($this->getLogsArr());
         $this->setLastError($logs);
         $this->setErrorCountPeriod($logs, env('LOG_PERIOD'));
@@ -184,10 +200,10 @@ class ApiController extends Controller
 
     private function setPages()
     {
-        if (!$safeView = view()->exists('safe.index')) {
+        if (!$safeView = View::exists('Public::safe.index')) {
             $this->pushErrors("safe.index doesn't exist");
         }
-        if (!$moneyView = view()->exists('money.index')) {
+        if (!$moneyView =View::exists('Public::money.index')) {
             $this->pushErrors("money.index doesn't exist");
         }
         if (200 !== ($safeStatus = $this->getStatus('safe')->getStatusCode())) {
@@ -209,7 +225,7 @@ class ApiController extends Controller
                 'exists' => $moneyView,
                 'httpStatus' => $moneyStatus,
                 'pageConfig' => File::exists($this->pathConfigJs)
-                    ? htmlspecialchars(File::get($this->pathConfigJs))
+                    ? e(File::get($this->pathConfigJs))
                     : "$this->pathConfigJs - doesn't exist"
             ],
         ];

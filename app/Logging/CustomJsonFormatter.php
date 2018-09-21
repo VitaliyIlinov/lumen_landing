@@ -18,7 +18,7 @@ class CustomJsonFormatter extends JsonFormatter
             'level_name' => $record['level_name'],
             'request_uri' => request()->getRequestUri(),
             'file' => $e->getFile() . ':' . $e->getLine(),
-            'message' => "$msg in File {$e->getFile()}:{$e->getLine()}.IP:".request()->ip()." Request uri: " .request()->getRequestUri(),
+            'message' => "$msg in File {$e->getFile()}:{$e->getLine()}.IP: ".request()->ip()." Request uri: " .request()->getRequestUri(),
         ];
 
         return parent::format($records);

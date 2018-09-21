@@ -6,6 +6,7 @@ use App\Exceptions\LogException;
 use App\Traits\FormRequest;
 use GeoIp2\Model\City;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 use Illuminate\Validation\ValidationException;
 
 class LandingController extends Controller
@@ -65,8 +66,8 @@ class LandingController extends Controller
 
     public function getMoneyPage()
     {
-        if (view()->exists('money.index')) {
-            return view('money.index', [
+        if (View::exists('Public::money.index')) {
+            return view('Public::money.index', [
                 'location' => $this->location,
                 'request' => request()->all()
             ]);
@@ -76,8 +77,8 @@ class LandingController extends Controller
 
     public function getSafePage()
     {
-        if (view()->exists('safe.index')) {
-            return view('safe.index', [
+        if (View::exists('Public::safe.index')) {
+            return view('Public::safe.index', [
                 'location' => $this->location,
                 'request' => request()->all()
             ]);
@@ -101,9 +102,8 @@ class LandingController extends Controller
         }
 
         $this->setTransactionId();
-        $this->setSessionData(['accessKey' => env('ACCESS_KEY')]);
 
-        $request->merge($this->getTrackParams());
+        $request->merge($this->getTrackParams() + ['accessKey' => env('ACCESS_KEY')]);
         $response = $this->sendDataForm($request->all());
         return $response->getBody()->getContents();
     }
