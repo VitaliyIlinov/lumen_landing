@@ -25,7 +25,7 @@ class LogException extends Exception
      */
     public function render(Request $request)
     {
-        $redirect = redirect()->to(view()->exist($this->getCode()) ? $this->getCode() : '404');
+        $redirect = redirect()->to('api/error');
         $redirect->setSession($request->getSession());
         return $redirect->withErrors($this->getCode() . ' ' . $this->getMessage());
     }

@@ -1,1 +1,1 @@
-@include('Public::money.index')
+@include('Money::index')

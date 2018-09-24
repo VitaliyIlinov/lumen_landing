@@ -20,7 +20,9 @@ class BladeServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        View::addNamespace('Public', base_path('public'));
+        $path = base_path('public').DIRECTORY_SEPARATOR;
+        View::addNamespace('Safe', $path.'s');
+        View::addNamespace('Money', $path.'m');
 
         Blade::if('env', function ($envKey, $value) {
             return env($envKey) == $value;

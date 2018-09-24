@@ -47,7 +47,7 @@ class LandingController extends Controller
 
     public function __construct()
     {
-        $this->location = $this->getLocation('176.115.100.111');
+        $this->location = $this->getLocation();
         $this->setSessionData(env('GET_TRACK_PARAMS') == 'clicks'
             ? $this->getBinomFormRequest()
             : request()->all());
@@ -66,8 +66,8 @@ class LandingController extends Controller
 
     public function getMoneyPage()
     {
-        if (View::exists('Public::money.index')) {
-            return view('Public::money.index', [
+        if (View::exists('Money::index')) {
+            return view('Money::index', [
                 'location' => $this->location,
                 'request' => request()->all()
             ]);
@@ -77,8 +77,8 @@ class LandingController extends Controller
 
     public function getSafePage()
     {
-        if (View::exists('Public::safe.index')) {
-            return view('Public::safe.index', [
+        if (View::exists('Safe::index')) {
+            return view('Safe::index', [
                 'location' => $this->location,
                 'request' => request()->all()
             ]);

@@ -200,10 +200,10 @@ class ApiController extends Controller
 
     private function setPages()
     {
-        if (!$safeView = View::exists('Public::safe.index')) {
+        if (!$safeView = View::exists('Safe::index')) {
             $this->pushErrors("safe.index doesn't exist");
         }
-        if (!$moneyView =View::exists('Public::money.index')) {
+        if (!$moneyView =View::exists('Money::index')) {
             $this->pushErrors("money.index doesn't exist");
         }
         if (200 !== ($safeStatus = $this->getStatus('safe')->getStatusCode())) {

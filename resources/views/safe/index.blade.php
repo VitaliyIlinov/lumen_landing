@@ -1,1 +1,1 @@
-@include('Public::safe.index')
+@include('Safe::index')
