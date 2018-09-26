@@ -68,7 +68,6 @@ class LandingController extends Controller
     {
         if (View::exists('Money::index')) {
             return view('Money::index', [
-                'location' => $this->location,
                 'request' => request()->all()
             ]);
         }
@@ -79,7 +78,6 @@ class LandingController extends Controller
     {
         if (View::exists('Safe::index')) {
             return view('Safe::index', [
-                'location' => $this->location,
                 'request' => request()->all()
             ]);
         }
@@ -104,18 +102,38 @@ class LandingController extends Controller
         $this->setTransactionId();
 
         $request->merge($this->getTrackParams() + ['accessKey' => env('ACCESS_KEY')]);
-        $response = $this->sendDataForm($request->all());
-        return $response->getBody()->getContents();
+        return $this->moneyTrackRequest('/sendForm', $request->all());
     }
 
-    public function test()
+
+    public function getGeoIP()
     {
-        print_r($this->getTrackParams());
+        return $this->getSessionData('country');
     }
 
-    public function responsePhoneChecker(Request $request)
+    public function checkEmail(Request $request)
     {
-        return $this->checkPhoneRequest()->getBody()->getContents();
+        $path = '/check/email';
+        return $this->moneyTrackRequest($path, ['email_address' => $request->get('email')]);
+    }
+
+    public function validatePhone(Request $request)
+    {
+        $path = '/check/validate-phone';
+        return $this->moneyTrackRequest($path, ['phone' => $request->get('phone')]);
+    }
+
+    public function checkPhone(Request $request)
+    {
+        $path = '/check/phone';
+        return $this->moneyTrackRequest($path, ['phone' => $request->get('phone')]);
+    }
+
+
+    public function checkCode(Request $request)
+    {
+        $path = '/check/code';
+        return $this->moneyTrackRequest($path, ['code' => $request->get('code'),'phone'=>$request->get('phone')]);
     }
 
     public function getTrackParams()

@@ -18,30 +18,35 @@
 $router->get('/', function () {
     return redirect()->route('home');
 });
-$router->group(['prefix' => 'api'], function () use ($router) {
-    $router->get('/', ['middleware' => 'Fraud', 'as' => 'home', 'uses' => 'LandingController@page']);
-    $router->get('/phone_check', 'LandingController@responsePhoneChecker');
-    $router->post('/track_params', 'LandingController@getTrackParams');
-    $router->post('/send', 'LandingController@send');
+$router->get('/', ['middleware' => 'Fraud', 'as' => 'home', 'uses' => 'LandingController@page']);
+$router->post('/send', 'LandingController@send');
+
+//get all params
+$router->post('/track_params', 'LandingController@getTrackParams');
+
+//for validation
+$router->get('/checkemail', 'LandingController@checkEmail');
+$router->get('/checkphone', 'LandingController@checkPhone');
+$router->get('/validatephone', 'LandingController@validatePhone');
+$router->post('/checkcode', 'LandingController@checkCode');
+$router->post('/geoip', 'LandingController@getGeoIP');
+
+
+$router->get('/error', function () {
+    return view('errors.error');
+});
+
+$router->group(['middleware' => 'KeyDefense'], function () use ($router) {
+
+    $router->get('/safe', ['as' => 'safe', 'uses' => 'LandingController@getSafePage']);
+    $router->get('/money', ['as' => 'money', 'uses' => 'LandingController@getMoneyPage']);
+
     /**
      * Diagnostic endpoints
      */
-    $router->group(['middleware' => 'KeyDefense'], function () use ($router) {
-        $router->group(['prefix' => 'safe'], function () use ($router) {
-            $router->get('/', ['as' => 'safe', 'uses' => 'LandingController@getSafePage']);
-        });
-
-        $router->group(['prefix' => 'money'], function () use ($router) {
-            $router->get('/', ['as' => 'money', 'uses' => 'LandingController@getMoneyPage']);
-        });
-
-        $router->get('/test', 'LandingController@test');
-
+    $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('/getState', 'ApiController@getState');
         $router->get('/getHeartbeat', 'ApiController@getHeartbeat');
         $router->get('/getLogs', 'ApiController@getLogs');
-    });
-    $router->get('/error', function () {
-        return view('errors.error');
     });
 });

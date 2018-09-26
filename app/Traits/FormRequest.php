@@ -18,7 +18,7 @@ trait FormRequest
         return $response;
     }
 
-    public function getBinomFormRequest()
+    private function getBinomFormRequest()
     {
         $result = [];
         $response = $this->sendFormRequest(env('BINOM_SERVER') . '/click.php?key=' . env('BINOM_KEY'), false, 'allow_redirects', 'GET');
@@ -33,34 +33,28 @@ trait FormRequest
         return $result;
     }
 
-    public function getTransactionIdFormRequest()
+    private function getTransactionIdFormRequest()
     {
-        if(!session()->has(['offer_id', 'affiliate_id'])){
-            throw new LogException("There are no offers and affiliates",303);
+        if (!session()->has(['offer_id', 'affiliate_id'])) {
+            throw new LogException("There are no offers and affiliates", 303);
         }
         $params = http_build_query([
-            'offer_id'=>session()->get('offer_id'),
-            'aff_id'=>session()->get('affiliate_id')
+                'offer_id' => session()->get('offer_id'),
+                'aff_id' => session()->get('affiliate_id')
             ]
         );
         $response = $this->sendFormRequest(env('HASOFFERS_SERVER') . '/aff_c?' . $params, false, 'allow_redirects', 'GET');
         return $response->hasHeader('tracking_id') ? $response->getHeader('tracking_id')[0] : '';
     }
 
-    public function checkPhoneRequest(string $phone = null)
+    private function moneyTrackRequest($path, array $arr, $formRequest = 'json')
     {
-        return $this->sendFormRequest(env('MONEY_TRACK_SERVER') . '/check/phone', $phone ? ['phone' => $phone] : request()->only('phone'), 'json');
+        return $this->sendFormRequest(env('MONEY_TRACK_SERVER') . $path, $arr, $formRequest)->getBody()->getContents();
     }
 
-    public function sendDataForm(array $data = [])
-    {
-        return $this->sendFormRequest(env('MONEY_TRACK_SERVER') . '/sendForm', $data ?: request()->all(), 'json');
-    }
-
-    public function sendDataFormTrack(array $data = [])
+    private function sendDataFormTrack(array $data = [])
     {
         return $this->sendFormRequest(env('TRACK_SERVER'), $data ?: request()->all(), 'json');
     }
-
 
 }

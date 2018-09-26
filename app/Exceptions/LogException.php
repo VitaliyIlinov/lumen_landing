@@ -25,7 +25,7 @@ class LogException extends Exception
      */
     public function render(Request $request)
     {
-        $redirect = redirect()->to('api/error');
+        $redirect = redirect()->to('error');
         $redirect->setSession($request->getSession());
         return $redirect->withErrors($this->getCode() . ' ' . $this->getMessage());
     }
