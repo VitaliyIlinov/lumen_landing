@@ -13,14 +13,12 @@ class LandingController extends Controller
 {
     use FormRequest;
 
-    protected $location;
-
     protected $rules = [
-        'firstName' => 'required|string',
-        'lastName' => 'required|string',
-        'email' => 'required|email',
-        'phone' => 'required|string',
-        'country' => 'required|string|size:2',
+        'first_name' => 'required|string|min:2|max:50',
+        'last_name' => 'required|string|min:2|max:50',
+        'email_address' => 'required|email',
+        'phone' => 'required|string|min:5|max:30',
+        'countryISO' => 'required|string|size:2',
         'ip' => 'required|sometimes',
         'aff_id' => 'required|string|sometimes',
         'affiliate_id' => 'required|string|sometimes',
@@ -34,20 +32,41 @@ class LandingController extends Controller
         'source_id' => 'required|string|sometimes',
         'registration' => 'required|sometimes',
         'redirectTarget' => 'required|in:deposit,platform,webpage|sometimes',
-        'comment' => 'required|string|sometimes',
-        'accessKey' => 'required|string|sometimes',
-        'password' => 'required|string|sometimes',
-        'referrer' => 'required|string|sometimes',
-        'sourceId' => 'required|string|sometimes',
-        'externalId' => 'required|string|sometimes',
+        'comment' => 'required|string|sometimes|max:150',
+        'password' => 'required|sometimes|min:6|max:30',
+        'referrer' => 'required|string|sometimes|min:1|max:20',
+        'sourceId' => 'required|string|sometimes|min:1|max:20',
+        'externalId' => 'required|string|sometimes|min:2|max:30',
         'custom' => 'required|string|sometimes',
+    ];
+
+    /**
+     * key - api key
+     * value - key from front
+     * also value can be method class as ip or
+     * function as accessKey
+     */
+    protected $apiMatchingArr = [
+        'firstName' => 'first_name',
+        'lastName' => 'last_name',
+        'email' => 'email_address',
+        'phone' => 'phone',
+        'country' => 'countryISO',
+        'password' => 'password',
+        'comment' => 'comment',
+        'ip' => 'M::getIp',
+        'accessKey' => 'F::return env(\'ACCESS_KEY\');',
+        'referrer' => 'referrer',
+        'sourceId' => 'source_id',
+        'externalId' => 'externalId',
+        'custom' => 'custom'
     ];
 
     protected $rulesMessage = [];
 
     public function __construct()
     {
-        //$this->location = $this->getLocation('176.115.100.111');
+        //todo Why?
         $this->setSessionData(env('GET_TRACK_PARAMS') == 'clicks'
             ? $this->getBinomFormRequest()
             : request()->all());
@@ -85,6 +104,7 @@ class LandingController extends Controller
 
     public function send(Request $request)
     {
+        //todo only JSON? or full page with errors?
         /*try {
             $this->validate($request, $this->rules, $this->rulesMessage);
         } catch (ValidationException $e) {
@@ -97,17 +117,35 @@ class LandingController extends Controller
             $this->setSessionData($this->getBinomFormRequest());
         }
 
-        $this->setTransactionId();
+        //todo only to TRACK_SERVER? or send to MONEY_TRACK_SERVER
+        //$this->setTransactionId();
+        //$request->merge($this->getTrackParams());
 
-        $request->merge($this->getTrackParams() + ['accessKey' => env('ACCESS_KEY')]);
-        return $this->sendDataFormTrack($request->all());
+        $data = $this->prepareApiArr($request->all());
+        return $this->sendDataFormTrack($data);
     }
 
+    protected function prepareApiArr(array $data)
+    {
+        array_filter($this->apiMatchingArr, function ($v, $k) use ($data, &$result) {
+            if (strpos($v, 'M::') !== false) {
+                $methodName = substr($v, 3);
+                $result[$k] = $this->$methodName();
+            } elseif (strpos($v, 'F::') !== false) {
+                $string = substr($v, 3);
+                $result[$k] = eval($string);
+            } elseif (isset($data[$v])) {
+                $result[$k] = $data[$v];
+            }
+        }, ARRAY_FILTER_USE_BOTH);
+
+        return $result;
+    }
 
     public function getGeoCountry()
     {
-        $path = env('MONEY_MAKE_SERVER').'/geoip/';
-        return $this->sendFormRequest( $path,null,null)->getBody()->getContents();
+        $path = env('MONEY_MAKE_SERVER') . '/geoip/';
+        return $this->sendFormRequest($path, null, null)->getBody()->getContents();
     }
 
     public function checkEmail(Request $request)
@@ -127,11 +165,11 @@ class LandingController extends Controller
         $path = '/check/phone';
         return $this->moneyTrackRequest($path, ['phone' => $request->get('phone')]);
     }
-    
+
     public function checkCode(Request $request)
     {
         $path = '/check/code';
-        return $this->moneyTrackRequest($path, ['code' => $request->get('code'),'phone'=>$request->get('phone')]);
+        return $this->moneyTrackRequest($path, ['code' => $request->get('code'), 'phone' => $request->get('phone')]);
     }
 
     public function getTrackParams()
@@ -165,7 +203,8 @@ class LandingController extends Controller
      *
      * @return float
      */
-    public function getClientIp() {
+    public function getClientIp()
+    {
         if (getenv('HTTP_CLIENT_IP')) {
             $ipaddress = getenv('HTTP_CLIENT_IP');
         } elseif (getenv('HTTP_X_FORWARDED_FOR')) {
@@ -190,7 +229,7 @@ class LandingController extends Controller
      * @return GeoIP
      */
 
-    protected function getLocation($ip = null) :GeoIP
+    protected function getLocation($ip = null): GeoIP
     {
         return app('geoip')->getLocation($ip);
     }
