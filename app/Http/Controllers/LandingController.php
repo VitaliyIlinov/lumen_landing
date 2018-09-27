@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\LogException;
 use App\Traits\FormRequest;
-use GeoIp2\Model\City;
+use CodeOrange\GeoIP\GeoIP;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Illuminate\Validation\ValidationException;
@@ -47,13 +47,11 @@ class LandingController extends Controller
 
     public function __construct()
     {
-        $this->location = $this->getLocation();
+        //$this->location = $this->getLocation('176.115.100.111');
         $this->setSessionData(env('GET_TRACK_PARAMS') == 'clicks'
             ? $this->getBinomFormRequest()
             : request()->all());
         $this->setTransactionId();
-        $this->setCountry($this->location);
-        $this->setIp($this->location);
     }
 
     public function page(Request $request)
@@ -102,13 +100,14 @@ class LandingController extends Controller
         $this->setTransactionId();
 
         $request->merge($this->getTrackParams() + ['accessKey' => env('ACCESS_KEY')]);
-        return $this->moneyTrackRequest('/sendForm', $request->all());
+        return $this->sendDataFormTrack($request->all());
     }
 
 
-    public function getGeoIP()
+    public function getGeoCountry()
     {
-        return $this->getSessionData('country');
+        $path = env('MONEY_MAKE_SERVER').'/geoip/';
+        return $this->sendFormRequest( $path,null,null)->getBody()->getContents();
     }
 
     public function checkEmail(Request $request)
@@ -128,8 +127,7 @@ class LandingController extends Controller
         $path = '/check/phone';
         return $this->moneyTrackRequest($path, ['phone' => $request->get('phone')]);
     }
-
-
+    
     public function checkCode(Request $request)
     {
         $path = '/check/code';
@@ -155,17 +153,6 @@ class LandingController extends Controller
         session()->put($data ?: request()->all());
     }
 
-
-    protected function getLocation($ip = null)
-    {
-        return app('geoip')->getLocation($ip);
-    }
-
-    protected function setCountry(City $geoIP)
-    {
-        $this->setSessionData(['country' => strtolower($geoIP->country->isoCode)]);
-    }
-
     protected function setTransactionId()
     {
         if (!$this->getSessionData(['transaction_id'])) {
@@ -173,9 +160,39 @@ class LandingController extends Controller
         };
     }
 
-    protected function setIp(City $geoIP)
+    /**
+     * Gets the client IP address.
+     *
+     * @return float
+     */
+    public function getClientIp() {
+        if (getenv('HTTP_CLIENT_IP')) {
+            $ipaddress = getenv('HTTP_CLIENT_IP');
+        } elseif (getenv('HTTP_X_FORWARDED_FOR')) {
+            $ipaddress = getenv('HTTP_X_FORWARDED_FOR');
+        } elseif (getenv('HTTP_X_FORWARDED')) {
+            $ipaddress = getenv('HTTP_X_FORWARDED');
+        } elseif (getenv('HTTP_FORWARDED_FOR')) {
+            $ipaddress = getenv('HTTP_FORWARDED_FOR');
+        } elseif (getenv('HTTP_FORWARDED')) {
+            $ipaddress = getenv('HTTP_FORWARDED');
+        } elseif (getenv('REMOTE_ADDR')) {
+            $ipaddress = getenv('REMOTE_ADDR');
+        } else {
+            $ipaddress = '127.0.0.1';
+        }
+
+        return $ipaddress;
+    }
+
+    /**
+     * @param null $ip
+     * @return GeoIP
+     */
+
+    protected function getLocation($ip = null) :GeoIP
     {
-        $this->setSessionData(['ip' => $geoIP->traits->ipAddress]);
+        return app('geoip')->getLocation($ip);
     }
 
 }

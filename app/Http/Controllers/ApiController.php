@@ -17,19 +17,19 @@ class ApiController extends Controller
      */
     private $responseFormat;
 
-    private $pathConfigJs = 'public/safe/js/config.js';
+    private $moneyPathConfigJs = 'public/s/js/config.js';
     private $configKeyRequired = [
-        'LOG_CHANNEL',
         'FRAUDFILTER',
         'FRAUD_URL',
         'FRAUD_KEY',
         'GET_TRACK_PARAMS',
-        'MONEY_TRACK_SERVER',
-        'HASOFFERS_SERVER',
         'BINOM_SERVER',
         'BINOM_KEY',
-        'SOURCE_ID',
+        'MONEY_TRACK_SERVER',
+        'HASOFFERS_SERVER',
         'ACCESS_KEY',
+        'TRACK_SERVER',
+        'MONEY_TRACK_SERVER',
         'LOG_PERIOD',
         'LAST_LOG_ERRORS'
     ];
@@ -47,7 +47,7 @@ class ApiController extends Controller
     public function __construct()
     {
         app()->configure('logging');
-        $this->pathConfigJs = base_path($this->pathConfigJs);
+        $this->moneyPathConfigJs = base_path($this->moneyPathConfigJs);
     }
 
 
@@ -78,7 +78,7 @@ class ApiController extends Controller
         $request = request();
         if (in_array($format = $request->get('format'), $availableFormat)) {
             $this->responseFormat = $format;
-        }else{
+        } else {
             $this->responseFormat = 'text';
         }
     }
@@ -203,7 +203,7 @@ class ApiController extends Controller
         if (!$safeView = View::exists('Safe::index')) {
             $this->pushErrors("safe.index doesn't exist");
         }
-        if (!$moneyView =View::exists('Money::index')) {
+        if (!$moneyView = View::exists('Money::index')) {
             $this->pushErrors("money.index doesn't exist");
         }
         if (200 !== ($safeStatus = $this->getStatus('safe')->getStatusCode())) {
@@ -211,9 +211,6 @@ class ApiController extends Controller
         }
         if (200 !== ($moneyStatus = $this->getStatus('money')->getStatusCode())) {
             $this->pushErrors("safe.index status {$moneyStatus}");
-        }
-        if (!File::exists($this->pathConfigJs)) {
-            $this->pushErrors("{$this->pathConfigJs} doesn't exist");
         }
 
         $this->responseMsg['pages'] = [
@@ -224,11 +221,23 @@ class ApiController extends Controller
             'money' => [
                 'exists' => $moneyView,
                 'httpStatus' => $moneyStatus,
-                'pageConfig' => File::exists($this->pathConfigJs)
-                    ? e(File::get($this->pathConfigJs))
-                    : "$this->pathConfigJs - doesn't exist"
+                'pageConfig' => $this->getJsConfig()
             ],
         ];
+    }
+
+    private function getJsConfig()
+    {
+        if (!File::exists($this->moneyPathConfigJs)) {
+            $this->pushErrors("{$this->moneyPathConfigJs} doesn't exist");
+            return false;
+        }
+        $jsContent = file_get_contents($this->moneyPathConfigJs);
+        $jsConfig = trim(stristr(str_replace('var CONFIG = ','',$jsContent), 'var formsList', true));
+        if (substr($jsConfig, -1) == ';') {
+            $jsConfig = substr($jsConfig, 0, -1);
+        }
+        return json_decode($jsConfig,true);
     }
 
     private function getStatus($routeName)

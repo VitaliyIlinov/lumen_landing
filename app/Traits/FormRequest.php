@@ -8,9 +8,14 @@ use App\Exceptions\LogException;
 trait FormRequest
 {
 
+    private function getClient()
+    {
+        return new \GuzzleHttp\Client();
+    }
+
     public function sendFormRequest(string $uri, $params, $formRequest = 'form_params', $method = 'POST')
     {
-        $client = new \GuzzleHttp\Client();
+        $client = $this->getClient();
         $response = $client->request($method, $uri, [
             $formRequest => $params
         ]);
@@ -52,9 +57,9 @@ trait FormRequest
         return $this->sendFormRequest(env('MONEY_TRACK_SERVER') . $path, $arr, $formRequest)->getBody()->getContents();
     }
 
-    private function sendDataFormTrack(array $data = [])
+    private function sendDataFormTrack(array $data)
     {
-        return $this->sendFormRequest(env('TRACK_SERVER'), $data ?: request()->all(), 'json');
+        return $this->sendFormRequest(env('TRACK_SERVER'), $data, 'json');
     }
 
 }

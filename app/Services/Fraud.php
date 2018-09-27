@@ -26,7 +26,6 @@ class Fraud
         $this->allHeaders['content-length'] = 0;
         $this->allHeaders['X-FF-P'] = env('FRAUD_KEY');
 
-        $this->addHeader($headers, 'X-FF-REMOTE-ADDR5', 'HTTP_TEST');
         $this->addHeader($headers, 'X-FF-REMOTE-ADDR', 'REMOTE_ADDR');
         $this->addHeader($headers, 'X-FF-X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR');
         $this->addHeader($headers, 'X-FF-X-REAL-IP', 'HTTP_X_REAL_IP');
@@ -61,20 +60,37 @@ class Fraud
         $this->addHeader($headers, 'User-Agent', 'HTTP_USER_AGENT');
         $this->addHeader($headers, 'Expected', '');
 
+        $cnt = 0;
+        foreach ($this->getallheadersFF() as $key => $value) {
+            $k = strtolower($key);
+            if ($k === 'host') {
+                $this->allHeaders['X-FF-HOST-ORDER'] = $cnt;
+                break;
+            }
+            $cnt++;
+        }
     }
 
 
     public function addHeader($header, $out, $in)
     {
-        if (0 === strpos($in, 'HTTP_')) {
-            $in = str_replace('_', '-', strtolower(substr($in, 5)));
+        if (isset($_SERVER[$in])) {
+            $value = $_SERVER[$in];
+            if (is_array($value)) {
+                $value = implode(',', $value);
+            }
+            $this->allHeaders[$out] = $value;
         }
-        if ($in === 'host') {
-            $out = 'X-FF-HOST-ORDER';
+    }
+
+    function getallheadersFF()
+    {
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+            }
         }
-        if ($this->request->header($in)) {
-            $this->allHeaders[$out] = $this->request->header($in);
-        }
+        return $headers ?: [];
     }
 
 
@@ -96,7 +112,7 @@ class Fraud
                 throw new ClientException($e->getResponse()->getReasonPhrase(), $e->getRequest(), $e->getResponse());
             }
         }
-        return $this->response ;
+        return $this->response;
     }
 
     public function isCloaked()

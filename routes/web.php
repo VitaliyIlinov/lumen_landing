@@ -25,11 +25,12 @@ $router->post('/send', 'LandingController@send');
 $router->post('/track_params', 'LandingController@getTrackParams');
 
 //for validation
-$router->get('/checkemail', 'LandingController@checkEmail');
-$router->get('/checkphone', 'LandingController@checkPhone');
-$router->get('/validatephone', 'LandingController@validatePhone');
+$router->post('/checkemail', 'LandingController@checkEmail');
+$router->post('/checkphone', 'LandingController@checkPhone');
+$router->post('/validatephone', 'LandingController@validatePhone');
 $router->post('/checkcode', 'LandingController@checkCode');
-$router->post('/geoip', 'LandingController@getGeoIP');
+$router->post('/geoip', 'LandingController@getGeoCountry');
+$router->post('/ip', 'LandingController@getClientIp');
 
 
 $router->get('/error', function () {
