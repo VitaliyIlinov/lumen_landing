@@ -126,13 +126,13 @@ class ApiController extends Controller
 
     private function setConfig()
     {
-        $configs = getenv();
         foreach ($this->configKeyRequired as $item) {
-            if (empty($configs[$item])) {
+            $value = env($item);
+            if (empty($value)) {
                 $this->pushErrors("KEY {$item} in env is empty");
                 $result[$item] = NULL;
             } else {
-                $result[$item] = $configs[$item];
+                $result[$item] = $value;
             }
         }
 
