@@ -17,8 +17,8 @@ class ApiController extends Controller
      */
     private $responseFormat;
 
-    private $moneyPathConfigJs = 'public/s/js/config.js';
     private $configKeyRequired = [
+        'PATH_CONFIG',
         'FRAUDFILTER',
         'FRAUD_URL',
         'FRAUD_KEY',
@@ -47,7 +47,6 @@ class ApiController extends Controller
     public function __construct()
     {
         app()->configure('logging');
-        $this->moneyPathConfigJs = base_path($this->moneyPathConfigJs);
     }
 
 
@@ -228,11 +227,12 @@ class ApiController extends Controller
 
     private function getJsConfig()
     {
-        if (!File::exists($this->moneyPathConfigJs)) {
-            $this->pushErrors("{$this->moneyPathConfigJs} doesn't exist");
+        $pathMoneyConfigJs = base_path(env('PATH_CONFIG'));
+        if (!File::exists($pathMoneyConfigJs)) {
+            $this->pushErrors("{$pathMoneyConfigJs} doesn't exist");
             return false;
         }
-        $jsContent = file_get_contents($this->moneyPathConfigJs);
+        $jsContent = file_get_contents($pathMoneyConfigJs);
         $jsConfig = trim(stristr(str_replace('var CONFIG = ','',$jsContent), 'var formsList', true));
         if (substr($jsConfig, -1) == ';') {
             $jsConfig = substr($jsConfig, 0, -1);

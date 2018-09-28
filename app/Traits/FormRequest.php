@@ -59,7 +59,7 @@ trait FormRequest
 
     private function sendDataFormTrack(array $data)
     {
-        return $this->sendFormRequest(env('TRACK_SERVER'), $data, 'json');
+        return $this->sendFormRequest(env('TRACK_SERVER'), $data, 'json')->getBody()->getContents();
     }
 
 }

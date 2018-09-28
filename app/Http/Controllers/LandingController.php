@@ -7,28 +7,28 @@ use App\Traits\FormRequest;
 use CodeOrange\GeoIP\GeoIP;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
-use Illuminate\Validation\ValidationException;
 
 class LandingController extends Controller
 {
     use FormRequest;
 
     protected $rules = [
-        'first_name' => 'required|string|min:2|max:50',
-        'last_name' => 'required|string|min:2|max:50',
+        'first_name' => 'required|string|min:1|max:50',
+        'last_name' => 'required|string|min:1|max:50',
         'email_address' => 'required|email',
         'phone' => 'required|string|min:5|max:30',
         'countryISO' => 'required|string|size:2',
-        'ip' => 'required|sometimes',
         'aff_id' => 'required|string|sometimes',
         'affiliate_id' => 'required|string|sometimes',
         'aff_sub' => 'required|string|sometimes',
         'offer_id' => 'required|string|sometimes',
-        'transaction_id' => 'required|string|sometimes',
+        'transaction_id' => 'string|sometimes',
         'plid' => 'required|string|sometimes',
         'tsid' => 'required|string|sometimes',
         'buid' => 'required|string|sometimes',
         'bcamp_id' => 'required|string|sometimes',
+        'bo' => 'string|sometimes',
+        'so' => 'string|sometimes',
         'source_id' => 'required|string|sometimes',
         'registration' => 'required|sometimes',
         'redirectTarget' => 'required|in:deposit,platform,webpage|sometimes',
@@ -37,7 +37,7 @@ class LandingController extends Controller
         'referrer' => 'required|string|sometimes|min:1|max:20',
         'sourceId' => 'required|string|sometimes|min:1|max:20',
         'externalId' => 'required|string|sometimes|min:2|max:30',
-        'custom' => 'required|string|sometimes',
+        'custom' => 'string|sometimes',
     ];
 
     /**
@@ -54,11 +54,11 @@ class LandingController extends Controller
         'country' => 'countryISO',
         'password' => 'password',
         'comment' => 'comment',
-        'ip' => 'M::getIp',
+        'ip' => 'M::getClientIp',
         'accessKey' => 'F::return env(\'ACCESS_KEY\');',
         'referrer' => 'referrer',
         'sourceId' => 'source_id',
-        'externalId' => 'externalId',
+        'externalId' => 'transaction_id',
         'custom' => 'custom'
     ];
 
@@ -66,7 +66,6 @@ class LandingController extends Controller
 
     public function __construct()
     {
-        //todo Why?
         $this->setSessionData(env('GET_TRACK_PARAMS') == 'clicks'
             ? $this->getBinomFormRequest()
             : request()->all());
@@ -104,39 +103,36 @@ class LandingController extends Controller
 
     public function send(Request $request)
     {
-        //todo only JSON? or full page with errors?
-        /*try {
-            $this->validate($request, $this->rules, $this->rulesMessage);
-        } catch (ValidationException $e) {
-            return $this->redirectBackWithErrors($request, $e);
-        }*/
-
         $this->validate($request, $this->rules, $this->rulesMessage);
 
         if (env('GET_TRACK_PARAMS') == 'conversions') {
             $this->setSessionData($this->getBinomFormRequest());
         }
 
-        //todo only to TRACK_SERVER? or send to MONEY_TRACK_SERVER
-        //$this->setTransactionId();
-        //$request->merge($this->getTrackParams());
+        $this->setTransactionId();
 
-        $data = $this->prepareApiArr($request->all());
+        //todo priority??
+        $request->merge($this->getTrackParams());
+
+        $inputs = $request->all();
+        $data = $this->prepareApiArr($inputs);
+        $data['custom'] = serialize($inputs);
         return $this->sendDataFormTrack($data);
     }
 
-    protected function prepareApiArr(array $data)
+    protected function prepareApiArr(array &$data)
     {
-        array_filter($this->apiMatchingArr, function ($v, $k) use ($data, &$result) {
+        array_filter($this->apiMatchingArr, function ($v, $k) use (&$data, &$result) {
             if (strpos($v, 'M::') !== false) {
-                $methodName = substr($v, 3);
-                $result[$k] = $this->$methodName();
+                $methodName = explode('|', substr($v, 3));
+                $result[$k] = $this->{$methodName[0]}($methodName[1] ?? null);
             } elseif (strpos($v, 'F::') !== false) {
                 $string = substr($v, 3);
                 $result[$k] = eval($string);
             } elseif (isset($data[$v])) {
                 $result[$k] = $data[$v];
             }
+            unset($data[$v]);
         }, ARRAY_FILTER_USE_BOTH);
 
         return $result;
@@ -184,6 +180,11 @@ class LandingController extends Controller
         }, ARRAY_FILTER_USE_BOTH);
 
         return $result;
+    }
+
+    protected function getValueSessionData(string $data)
+    {
+        return current($this->getSessionData((array)$data));
     }
 
     protected function setSessionData(array $data = array())
