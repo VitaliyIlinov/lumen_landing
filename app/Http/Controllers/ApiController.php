@@ -3,19 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Services\Fraud;
+use App\Traits\ApiResponse;
+use Illuminate\Support\Arr;
 use GuzzleHttp\Exception\ClientException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 
 class ApiController extends Controller
 {
-    /**
-     * @var string
-     */
-    private $responseFormat;
+
+    use ApiResponse;
 
     private $configKeyRequired = [
         'PATH_CONFIG',
@@ -34,34 +33,37 @@ class ApiController extends Controller
         'LAST_LOG_ERRORS'
     ];
 
-    private $responseMsg = [
-        'status' => '',
-        'errorMessage' => '',
-        'config' => '',
-        'pages' => '',
-        'cloaking' => '',
-        'lastErrors' => ''
-    ];
     private $errors = [];
 
-    public function __construct()
-    {
-        app()->configure('logging');
-    }
+    protected $responseMsg = [];
 
+
+    private function sort(array $arr)
+    {
+        $sort = ['status', 'errorMessage', 'config', 'pages', 'cloaking', 'lastErrors', 'errorCount'];
+        $result = [];
+        foreach ($sort as $key) {
+            if (isset($arr[$key])) {
+                $result[$key] = $arr[$key];
+                unset($arr[$key]);
+            }
+        }
+        return $result + $arr;
+    }
 
     public function getState(Request $request)
     {
         $this->setResponseFormat();
         $this->setAllParams($request);
-        return $this->response();
+        return $this->response($this->sort($this->responseMsg));
     }
 
     public function getHeartbeat(Request $request)
     {
         $this->setResponseFormat();
         $this->setAllParams($request);
-        return $this->response(['status', 'errorMessage', 'errorCount']);
+        $data = Arr::only($this->responseMsg, ['status', 'errorMessage', 'errorCount']);
+        return $this->response($this->sort($data));
     }
 
     public function getLogs(Request $request)
@@ -69,17 +71,6 @@ class ApiController extends Controller
         $lastLogErrors = $request->get('last_log', env('LAST_LOG_ERRORS'));
         $data = array_slice($this->getLogsArr(), -1 * abs($lastLogErrors));
         return $this->textResponse($this->jsonToArray($data));
-    }
-
-
-    private function setResponseFormat(array $availableFormat = ['text', 'json'])
-    {
-        $request = request();
-        if (in_array($format = $request->get('format'), $availableFormat)) {
-            $this->responseFormat = $format;
-        } else {
-            $this->responseFormat = 'text';
-        }
     }
 
     private function setAllParams(Request $request)
@@ -104,27 +95,12 @@ class ApiController extends Controller
         return $this->errors[] = $msg;
     }
 
-    private function response(array $key = [])
-    {
-        $responseMethod = strtolower($this->responseFormat) . 'Response';
-        if ($key) {
-            return $this->$responseMethod(Arr::only($this->responseMsg, $key));
-        }
-        return $this->$responseMethod($this->responseMsg);
-    }
-
-    private function jsonResponse($data)
-    {
-        return response()->json($data);
-    }
-
-    private function textResponse($data)
-    {
-        return view('helpers.textResponse', ['data' => $data]);
-    }
-
     private function setConfig()
     {
+        if (!File::exists(base_path('.env'))) {
+            $this->pushErrors(base_path('.env') . "doesn't exist");
+        }
+
         foreach ($this->configKeyRequired as $item) {
             $value = env($item);
             if (empty($value)) {
@@ -150,17 +126,15 @@ class ApiController extends Controller
         $this->responseMsg['errorCount'] = count($result ?: []);
     }
 
-    private function jsonToArray($arr)
+    protected function getFilePath()
     {
-        return array_map(function ($arr) {
-            return json_decode($arr, true);
-        }, $arr);
+        $loggingConfig = config('logging');
+        return $loggingConfig['channels'][$loggingConfig['default']]['path'];
     }
 
     private function getLogsArr()
     {
-        $loggingConfig = config('logging');
-        $filePath = $loggingConfig['channels'][$loggingConfig['default']]['path'];
+        $filePath = $this->getFilePath();
         if (File::exists($filePath)) {
             $data = file($filePath);
         } else {
@@ -233,11 +207,11 @@ class ApiController extends Controller
             return false;
         }
         $jsContent = file_get_contents($pathMoneyConfigJs);
-        $jsConfig = trim(stristr(str_replace('var CONFIG = ','',$jsContent), 'var formsList', true));
+        $jsConfig = trim(stristr(str_replace('var CONFIG = ', '', $jsContent), 'var formsList', true));
         if (substr($jsConfig, -1) == ';') {
             $jsConfig = substr($jsConfig, 0, -1);
         }
-        return json_decode($jsConfig,true);
+        return json_decode($jsConfig, true);
     }
 
     private function getStatus($routeName)

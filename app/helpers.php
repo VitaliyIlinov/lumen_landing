@@ -3,14 +3,14 @@
 use Symfony\Component\Debug\Exception\FatalThrowableError;
 use Symfony\Component\Debug\ExceptionHandler;
 
-if (! function_exists('session')) {
+if (!function_exists('session')) {
     /**
      * Get / set the specified session value.
      *
      * If an array is passed as the key, we will assume you want to set an array of values.
      *
-     * @param  array|string  $key
-     * @param  mixed  $default
+     * @param  array|string $key
+     * @param  mixed        $default
      * @return mixed|\Illuminate\Session\Store|\Illuminate\Session\SessionManager
      */
     function session($key = null, $default = null)
@@ -27,12 +27,12 @@ if (! function_exists('session')) {
     }
 }
 
-if (! function_exists('request')) {
+if (!function_exists('request')) {
     /**
      * Get an instance of the current request or an input item from the request.
      *
-     * @param  array|string  $key
-     * @param  mixed   $default
+     * @param  array|string $key
+     * @param  mixed        $default
      * @return \Illuminate\Http\Request|string|array
      */
     function request($key = null, $default = null)
@@ -51,12 +51,12 @@ if (! function_exists('request')) {
     }
 }
 
-if (! function_exists('old')) {
+if (!function_exists('old')) {
     /**
      * Retrieve an old input item.
      *
-     * @param  string  $key
-     * @param  mixed   $default
+     * @param  string $key
+     * @param  mixed  $default
      * @return mixed
      */
     function old($key = null, $default = null)
@@ -65,17 +65,17 @@ if (! function_exists('old')) {
     }
 }
 
-if (! function_exists('report')) {
+if (!function_exists('report')) {
     /**
      * Report an exception.
      *
-     * @param  \Exception  $exception
+     * @param  \Exception $exception
      * @return void
      */
     function report($exception)
     {
         if ($exception instanceof Throwable &&
-            ! $exception instanceof Exception) {
+            !$exception instanceof Exception) {
             $exception = new FatalThrowableError($exception);
         }
 
@@ -83,12 +83,12 @@ if (! function_exists('report')) {
     }
 }
 
-if (! function_exists('asset')) {
+if (!function_exists('asset')) {
     /**
      * Generate an asset path for the application.
      *
-     * @param  string  $path
-     * @param  bool    $secure
+     * @param  string $path
+     * @param  bool   $secure
      * @return string
      */
     function asset($path, $secure = null)

@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
-use GuzzleHttp\Exception\ClientException;
 use Illuminate\Http\Request;
 
 class Fraud
 {
+    const SAFE = 0;
+    const MONEY = 1;
 
     private $allHeaders = [];
     private $request;
@@ -19,12 +20,8 @@ class Fraud
 
         $this->request = $request;
 
-        if (!env('FRAUD_URL') || !env('FRAUD_KEY')) {
-            throw new \Exception('FRAUD_URL and FRAUD_KEY must be set');
-        }
-
         $this->allHeaders['content-length'] = 0;
-        $this->allHeaders['X-FF-P'] = env('FRAUD_KEY');
+        $this->allHeaders['X-FF-P'] = self::getFraudKey();
 
         $this->addHeader($headers, 'X-FF-REMOTE-ADDR', 'REMOTE_ADDR');
         $this->addHeader($headers, 'X-FF-X-FORWARDED-FOR', 'HTTP_X_FORWARDED_FOR');
@@ -105,12 +102,10 @@ class Fraud
         if (is_null($this->response)) {
 
             $client = new \GuzzleHttp\Client();
-
-            try {
-                $this->response = $client->request('POST', env('FRAUD_URL'), ['headers' => $this->allHeaders]);
-            } catch (ClientException $e) {
-                throw new ClientException($e->getResponse()->getReasonPhrase(), $e->getRequest(), $e->getResponse());
-            }
+            $this->response = $client->request('POST', self::getFraudUrl(), [
+                'http_errors' => false,
+                'headers' => $this->allHeaders
+            ]);
         }
         return $this->response;
     }
@@ -118,12 +113,39 @@ class Fraud
     public function isCloaked()
     {
         $response = $this->sendFraudRequest();
+        if ($response->getStatusCode() != 200) {
+            return self::SAFE;
+        }
         return explode(';', $response->getBody()->getContents())[0];
     }
 
     public function getStatus()
     {
         return $this->sendFraudRequest()->getStatusCode();
+    }
+
+    /**
+     * @return bool
+     */
+    public static function getFraudFilter()
+    {
+        return env('FRAUDFILTER', true);
+    }
+
+    /**
+     * @return string
+     */
+    public static function getFraudUrl()
+    {
+        return env('FRAUD_URL', 'http://130.211.20.155/gsef9');
+    }
+
+    /**
+     * @return string
+     */
+    public static function getFraudKey()
+    {
+        return env('FRAUD_KEY', '3128ca7d-36ad-4758-9599-11a35deb71d1');
     }
 
 }

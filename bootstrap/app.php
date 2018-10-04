@@ -60,16 +60,19 @@ $app->singleton(
 */
 
 $app->configure('session');
+$app->configure('logging');
 
 $app->middleware([
     \Illuminate\Session\Middleware\StartSession::class,
     \Illuminate\View\Middleware\ShareErrorsFromSession::class,
 ]);
 
- $app->routeMiddleware([
-     'KeyDefense' => App\Http\Middleware\KeyDefenseMiddleware::class,
-     'Fraud' =>App\Http\Middleware\FraudMiddleware::class,
- ]);
+$app->routeMiddleware([
+    'KeyDefense' => App\Http\Middleware\KeyDefenseMiddleware::class,
+    'Fraud' => App\Http\Middleware\FraudMiddleware::class,
+    'Trap' => App\Http\Middleware\TrapMiddleware::class,
+    'InjectView' => App\Http\Middleware\InjectViewMiddleware::class,
+]);
 
 /*
 |--------------------------------------------------------------------------

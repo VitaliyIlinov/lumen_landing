@@ -19,7 +19,7 @@ class FraudMiddleware
     /**
      * Create a new error binder instance.
      *
-     * @param  \Illuminate\Contracts\View\Factory  $view
+     * @param  \Illuminate\Contracts\View\Factory $view
      * @return void
      */
     public function __construct(ViewFactory $view)
@@ -29,16 +29,17 @@ class FraudMiddleware
 
     /**
      * @param Request $request
-     * @param Closure $next
+     * @param Closure $nextfinds
      * @return mixed
      * @throws \Exception
      */
     public function handle(Request $request, Closure $next)
     {
-        if (env('FRAUDFILTER')) {
-            $fraud = new Fraud($request);
-            session()->put(['pageType'=>$fraud->isCloaked()]);
+        $isClocked = Fraud::SAFE;
+        if (Fraud::getFraudFilter()) {
+            $isClocked = (new Fraud($request))->isCloaked();
         }
+        session()->put(['pageType' => $isClocked]);
         return $next($request);
     }
 }

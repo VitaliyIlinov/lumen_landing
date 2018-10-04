@@ -3,7 +3,7 @@
 namespace App\Logging;
 
 
-class SetFormatter
+class SetBlackListFormatter
 {
 
     /**
@@ -15,7 +15,7 @@ class SetFormatter
     public function __invoke($logger)
     {
         foreach ($logger->getHandlers() as $handler) {
-           $handler->setFormatter( new CustomJsonFormatter());
+           $handler->setFormatter( new BlackListJsonFormatter());
         }
     }
 }

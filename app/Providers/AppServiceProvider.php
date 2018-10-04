@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         View::share('test','test');
-        View::composer(['safe.index',],function ($view){
+        View::composer(['Safe::index'],function ($view){
            //todo if need manipulate data before render view
         });
     }

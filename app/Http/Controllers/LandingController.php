@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\LogException;
+use App\Services\Fraud;
 use App\Traits\FormRequest;
 use CodeOrange\GeoIP\GeoIP;
 use Illuminate\Http\Request;
@@ -74,10 +75,13 @@ class LandingController extends Controller
 
     public function page(Request $request)
     {
-        if (session()->get('pageType')) {
-            return $this->getMoneyPage();
+        switch (session()->get('pageType')) {
+            case Fraud::MONEY:
+                return $this->getMoneyPage();
+            case Fraud::SAFE:
+            default:
+                return $this->getSafePage();
         }
-        return $this->getSafePage();
     }
 
     public function getMoneyPage()
@@ -197,32 +201,6 @@ class LandingController extends Controller
         if (!$this->getSessionData(['transaction_id'])) {
             $this->setSessionData(['transaction_id' => $this->getTransactionIdFormRequest()]);
         };
-    }
-
-    /**
-     * Gets the client IP address.
-     *
-     * @return float
-     */
-    public function getClientIp()
-    {
-        if (getenv('HTTP_CLIENT_IP')) {
-            $ipaddress = getenv('HTTP_CLIENT_IP');
-        } elseif (getenv('HTTP_X_FORWARDED_FOR')) {
-            $ipaddress = getenv('HTTP_X_FORWARDED_FOR');
-        } elseif (getenv('HTTP_X_FORWARDED')) {
-            $ipaddress = getenv('HTTP_X_FORWARDED');
-        } elseif (getenv('HTTP_FORWARDED_FOR')) {
-            $ipaddress = getenv('HTTP_FORWARDED_FOR');
-        } elseif (getenv('HTTP_FORWARDED')) {
-            $ipaddress = getenv('HTTP_FORWARDED');
-        } elseif (getenv('REMOTE_ADDR')) {
-            $ipaddress = getenv('REMOTE_ADDR');
-        } else {
-            $ipaddress = '127.0.0.1';
-        }
-
-        return $ipaddress;
     }
 
     /**

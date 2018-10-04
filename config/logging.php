@@ -45,6 +45,13 @@ return [
             'level' => 'debug',
         ],
 
+        'blacklist' => [
+            'driver' => 'single',
+            'tap' => [App\Logging\SetBlackListFormatter::class],
+            'path' => storage_path('logs/blacklist.log'),
+            'level' => 'debug',
+        ],
+
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),

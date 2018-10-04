@@ -3,12 +3,10 @@
 namespace App\Exceptions;
 
 use Exception;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Handler extends ExceptionHandler
@@ -23,38 +21,52 @@ class Handler extends ExceptionHandler
        // HttpException::class,
         ModelNotFoundException::class,
         ValidationException::class,
+        CodeException::class,
     ];
 
     /**
      * Report or log an exception.
      *
-     * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
-     *
-     * @param  \Exception $e
-     * @return void
+     * @param Exception $e
+     * @throws Exception
      */
     public function report(Exception $e)
     {
-        parent::report($e);
+        if ($this->shouldntReport($e)) {
+            return;
+        }
+
+        try {
+            $logger = app('Psr\Log\LoggerInterface');
+        } catch (Exception $ex) {
+            throw $e; // throw the original exception
+        }
+
+        //config.logging.default
+        if($e instanceof BlackListException){
+            $logger->setDefaultDriver('blacklist');
+        }
+        $logger->error($e, ['exception' => $e]);
     }
 
     /**
      * Render an exception into an HTTP response.
      *
-     * @param  \Illuminate\Http\Request $request
-     * @param  \Exception $e
-     * @return \Illuminate\Http\Response
+     * @param \Illuminate\Http\Request $request
+     * @param Exception                $e
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
+     * @throws \ReflectionException
      */
     public function render($request, Exception $e)
     {
-//        if (env('APP_DEBUG')) {
-//            return parent::render($request, $e);
-//        }
         if ($e instanceof LogException && !$request->expectsJson()) {
             return $e->render($request);
         }elseif ($e instanceof NotFoundHttpException){
             return redirect()->route('home');
+        }elseif ($e instanceof CodeException){
+            return $e->render($request);
         }
+
         return $request->expectsJson()
             ? response()->json(['message' => $e->getMessage(), 'name' => (new \ReflectionClass($e))->getShortName()], $e->getCode())
             : parent::render($request, $e);
