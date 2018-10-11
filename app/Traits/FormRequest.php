@@ -16,9 +16,8 @@ trait FormRequest
     public function sendFormRequest(string $uri, $params, $formRequest = 'form_params', $method = 'POST')
     {
         $client = $this->getClient();
-        $response = $client->request($method, $uri, [
-            $formRequest => $params
-        ]);
+        $data = is_callable($params) ? call_user_func($params) : [$formRequest => $params];
+        $response = $client->request($method, $uri, $data);
 
         return $response;
     }

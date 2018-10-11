@@ -25,6 +25,7 @@ $router->group(['middleware' => 'Trap'], function () use ($router) {
     $router->post('/send', 'LandingController@send');
     //get all params
     $router->post('/track_params', 'LandingController@getTrackParams');
+    $router->post('/subscribe', 'LandingController@getSubscriberInfo');
     //for validation
     $router->post('/checkemail', 'LandingController@checkEmail');
     $router->post('/checkphone', 'LandingController@checkPhone');

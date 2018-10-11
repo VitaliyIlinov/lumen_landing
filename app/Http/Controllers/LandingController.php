@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Exceptions\LogException;
 use App\Services\Fraud;
 use App\Traits\FormRequest;
+use App\Traits\SubscriberInfo;
 use CodeOrange\GeoIP\GeoIP;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 
 class LandingController extends Controller
 {
-    use FormRequest;
+    use FormRequest, SubscriberInfo;
 
     protected $rules = [
         'first_name' => 'required|string|min:1|max:50',
@@ -211,6 +212,26 @@ class LandingController extends Controller
     protected function getLocation($ip = null): GeoIP
     {
         return app('geoip')->getLocation($ip);
+    }
+
+    public function getSubscriberInfo()
+    {
+
+        $request = request();
+
+        $data = function () use ($request) {
+            return [
+                'http_errors' => false,
+                'form_params' => [
+                    'geo' => $this->getGeoCountry(),
+                    'user_agent' => $request->userAgent(),
+                    'domain_name' => $request->getSchemeAndHttpHost()
+                ]
+            ];
+        };
+
+
+        return $this->sendFormRequest('http://pushmaze.loc.com/api/subscriber_info', $data)->getBody()->getContents();
     }
 
 }
