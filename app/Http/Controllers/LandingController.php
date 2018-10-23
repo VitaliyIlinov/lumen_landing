@@ -225,13 +225,17 @@ class LandingController extends Controller
                 'form_params' => [
                     'geo' => $this->getGeoCountry(),
                     'user_agent' => $request->userAgent(),
-                    'domain_name' => $request->getSchemeAndHttpHost()
+                    'domain_name' => $request->getSchemeAndHttpHost(),
+                    'id' => $this->getValueSessionData('subscriber_push_id'),
+                    'tag' => $request->get('tag','lead')
                 ]
             ];
         };
 
 
-        return $this->sendFormRequest('http://pushmaze.loc.com/api/subscriber_info', $data)->getBody()->getContents();
+        $response = $this->sendFormRequest('http://pushmaze.loc.com/api/subscriber_info', $data)->getBody()->getContents();
+        $this->setSessionData(['subscriber_push_id' => json_decode($response)->id]);
+        return $response;
     }
 
 }
